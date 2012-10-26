@@ -1,0 +1,8 @@
+©2012 Warehouse Guitar Speakers. Permission is hereby granted to any person obtaining a copy of this software and associated documentation for use and/or modification provided such use and/or modification does not hinder any other person's use and/or modification.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+The folder 'uc_bitpay' is a payment method module intended for use with version 6 of Drupal, and the corresponding version of Ubercart.
+
+This module allows e-commerce merchants who have signed up with Bitpay (at https://bitpay.com) to use their API to accept bitcoins for online payments. The funds are converted by Bitpay to your local currency (in exchange for a fee) and a direct deposit is made into your bank. They allow deposits in US Dollars, Canadian Dollars, Mexican Pesos, Eurozone Euros, and British Pounds. Alternatively, they can simply forward the bitcoins to a bitcoin address of your choosing, for a much lower fee.
