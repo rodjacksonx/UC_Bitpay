@@ -1,0 +1,746 @@
+<?php
+
+/**
+ * @file
+ * Enabling Bitcoin payments via Bitpay.com
+ *
+ * @creation October 2012
+ * @author Rod Jackson (RDJ) - with the bulk of code derived
+ * from Ubercart's v.6 included payment modules and from
+ * Mike Gogulski's uc_bitcoin payment module
+ */
+ 
+require_once("bp_lib.php");
+require_once("uc_bitpay.pages.inc");
+
+define ('BITPAY_WEBSITE', "https://bitpay.com");
+ 
+define ('BITPAY_SMALL_LOGO_FILE', "/img/bitpay23.png");
+ 
+define ('BITCOIN_ACCEPTED_LOGO_FILE', "/bitcoin-accepted.png");
+
+define ('BITCOIN_ACCEPTED_LOGO_PATH', base_path() . drupal_get_path('module', 'uc_bitpay') . BITCOIN_ACCEPTED_LOGO_FILE);
+
+define ('BITPAY_NOTIFY_URL', "/uc_bitpay/notifications");
+
+define ('BITPAY_INVOICE_EXPIRATION_TIME', "15"); // in minutes; keep as a string
+
+/**
+ * Settings form for the Bitpay payment method module.
+ * Not directly hooked into by Ubercart; called by
+ * uc_payment_method_bitpay()
+ */
+function uc_bitpay_settings_form() {
+
+  global $base_url;
+	
+  $form = array();
+
+  $form['admin'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Administrator settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['admin']['uc_bitpay_current_api_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Current Bitpay API key'),
+    '#default_value' => variable_get('uc_bitpay_current_api_key', ''),
+		'#description' => t('Your current Bitpay API key should be entered here. This key must be kept private. To view or edit your API keys, please go to your merchant account at ') .
+		  '<a href="' . BITPAY_WEBSITE . '" target="_blank">' . t("Bitpay's website") . '</a>.',
+  );
+	$form['admin']['uc_bitpay_prior_api_key'] = array(
+    '#type' => 'item',
+    '#title' => t('Prior Bitpay API key: ') .
+		            variable_get('uc_bitpay_prior_api_key','') . '<br />' .
+		            t('This is retained on the chance that you change API keys while ') .
+								t('Bitpay invoices are still pending. To clear, change the current ') .
+								t('API key to a random number and save the changes, then re-enter ') .
+								t('the current API key again and save the changes again.'),
+	);
+  $form['admin']['uc_bitpay_notify_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Notification email address'),
+    '#default_value' => variable_get('uc_bitpay_notify_email', ''),
+    '#description' => t('Email address to receive Bitpay invoice notifications. Not necessary, primarily for debugging or to be alerted of any bitcoin payments.'),
+  );
+	$form['admin']['uc_bitpay_notify_email_active'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow Bitpay invoice notifications to be emailed.'),
+    '#default_value' => variable_get('uc_bitpay_notify_email_active', FALSE),
+	);
+  $form['admin']['uc_bitpay_full_notify'] = array(
+    '#type' => 'radios',
+    '#title' => t('Full notification?'),
+    '#options' => array(
+      0 => t('NO, only send notifications on a status upgrade to "confirmed."'),
+      1 => t('YES, send notifications any time an invoice status changes.')
+		),
+    '#default_value' => variable_get('uc_bitpay_full_notify', 0),
+    '#description' => t('Whether you want to receive notifications for every status change for every Bitpay invoice. It is safe to choose NO, but if you wish for more updates you should choose YES.'),
+  );
+  $form['admin']['uc_bitpay_base_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Store website base URL'),
+    '#default_value' => variable_get('uc_bitpay_base_url', $base_url),
+    '#description' => t("Base URL of the store website. It is presented here primarily as an option to modify whether 'http' or 'https' is used. If in doubt, please use the store's internal base URL of: ") . '<b>' . $base_url . '</b>',
+  );
+
+  $form['general'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General settings'),
+    '#collapsible' => FALSE,
+    '#collapsed' => FALSE,
+  );
+  $form['general']['uc_bitpay_redirect_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Redirect URL'),
+    '#default_value' => variable_get('uc_bitpay_redirect_url', ''),
+    '#description' => t('URL to redirect buyers to after a Bitpay purchase. Not necessary since the payment feature appears inside the checkout order review, but usually set to the store URL (or the user cart) just in case the buyer clicks it.'),
+  );
+  $form['general']['uc_bitpay_currency'] = array(
+    '#type' => 'select',
+    '#title' => t('Store currency'),
+		'#options' => _uc_bitpay_currency_array(),
+    '#default_value' => variable_get('uc_bitpay_currency', 'BTC'),
+    '#description' => t('The currency the store sets prices in. These prices are automatically converted to the current bitcoin price by Bitpay. Merchants will receive the full value of the purchase (minus Bitpay fees) without risk of cross-currency price volatility.'),
+  );
+  $form['general']['uc_bitpay_physical'] = array(
+    '#type' => 'radios',
+    '#title' => t('Physical items?'),
+    '#options' => array(
+      0 => t('NO, this store primarily sells services or virtual goods.'),
+      1 => t('YES, this store generally sells physical goods.')
+		),
+    '#default_value' => variable_get('uc_bitpay_physical', 1),
+    '#description' => t('Whether, in general, purchases made with bitcoin on your website will involve the sale of a physical good.'),
+  );
+  $form['general']['uc_bitpay_fee_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Bitcoin handling fee type'),
+		'#options' => array(
+		  'percentage' => t('Percentage') . ' (%)',
+			'multiplier' => t('Multiplier') . ' (x)',
+			'addition'   => t('Addition') . ' (' . variable_get('uc_currency_sign', '$') . ')'
+		),
+    '#default_value' => variable_get('uc_bitpay_fee_type', 'percentage'),
+    '#description' => t('The type of bitcoin handling fee to add to the final price. This can be Percentage, a Multiplier, or a flat-amount Addition.'),
+  );
+  $form['general']['uc_bitpay_fee_amt'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bitcoin handling fee amount'),
+    '#default_value' => variable_get('uc_bitpay_fee_amt', '0'),
+    '#description' => t('The actual amount of the percent, multiplier or addition to be added to each bitcoin purchase. NOTE: If you want the customer to cover a Bitpay fee of 3.99%, 2.69% or 0.99%, you should charge a handling fee of 4.16%, 2.77% or 1%, respectively (this assumes no other fees or extra line items will be collected. Adjust accordingly.)'),
+  );
+  $form['general']['uc_bitpay_txn_speed'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction speed'),
+		'#options' => array(
+		  'low' => t('LOW: fully secure, ~1 hour to confirm'),
+			'medium' => t('MEDIUM: very safe, ~10 minutes to confirm'),
+			'fast' => t('FAST: reasonably safe for small purchases, instant confirmation (please see warning below)')
+		),
+    '#default_value' => variable_get('uc_bitpay_txn_speed', 'low'),
+    '#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. ') . '<b>' . t('WARNING: ') . '</b>' . t('Fast and medium-speed transactions allow the slight possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are extremely unlikely, and require enormous amounts of computing power. Fraudulent fast-speed transactions are unlikely, and require some degree of technical effort to achieve. IT IS HIGHLY RECOMMENDED THAT FAST TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
+	);
+
+  return $form;
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function uc_bitpay_menu() {
+  // Always accessible, accepts POST data from Bitpay's servers
+	// when being notified of status changes to an invoice.
+  $items[BITPAY_NOTIFY_URL] = array(
+    'title' => 'Bitpay Notifications',
+    'access callback' => TRUE,
+		'page callback' => 'uc_bitpay_notification',
+    'type' => MENU_CALLBACK,
+    'file' => 'uc_bitpay.pages.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Display help and module information
+ * @param path which path of the site we're displaying help
+ * @param arg array that holds the current path as would be returned from arg() function
+ * @return help text for the path
+ */
+function uc_bitpay_help($path, $arg) {
+  $o = '';  // declare your output variable
+  switch ($path) {
+    case "admin/help#bitpay":
+      $o .= '<p>'.  t('Implements the acceptance of bitcoin payments through the ') .  "Bitpay.com" . t(' API.') .'</p>';
+      break;
+  }
+  return $o;
+} // end function - uc_bitpay_help
+
+
+/**
+ * Implements hook_payment_method().
+ */
+function uc_bitpay_payment_method() {
+  $title = '<img src="' . BITPAY_WEBSITE . BITPAY_SMALL_LOGO_FILE . '" ' .
+	         'style="position:relative; top:5px; margin-right:6px;" />' .
+					 '<img src="' . BITCOIN_ACCEPTED_LOGO_PATH .
+					 '" style="position:relative; top:5px; margin-right:6px;" />' .
+           t('Bitpay - pay with Bitcoins via Bitpay.');
+
+  $methods[] = array(
+    'id' => 'bitpay',
+    'name' => t('Bitpay'),
+    'title' => $title,
+    'review' => t('Bitcoin via Bitpay'),
+    'desc' => t('Make a payment using bitcoins.'),
+    'callback' => 'uc_payment_method_bitpay',
+    'weight' => 4,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+
+
+/**
+ * Implementation of hook_order().
+ */
+function uc_bitpay_order($op, $arg1, $arg2) {
+
+	global $base_url;
+	
+	// check for order 'save' even if payment method isn't 'bitpay';
+	// they may have changed if from 'bitpay', so if they're saving,
+	// and we find a bitcoin handling fee line item, we should remove it
+	if ($op == 'save') {
+    foreach($arg1->line_items as $k => $line_item) {
+      if($line_item['type'] == 'uc_bitpay_fee') {
+        unset($arg1->line_items[$k]);
+        db_query('DELETE FROM {uc_order_line_items} WHERE order_id = %d AND type = "%s"', $arg1->order_id, 'uc_bitpay_fee');
+      }
+    }
+  }
+	
+  if ($arg1->payment_method == 'bitpay') {
+	
+    switch ($op) {
+
+      case 'save':
+
+        // if there's a fee now, add the line item
+				$fee = uc_bitpay_get_handling_fee($arg1);
+				if ($fee > 0) {
+					  uc_order_line_item_add($arg1->order_id, 'uc_bitpay_fee', t('Bitcoin handling fee'), $fee, NULL);
+				}
+			  
+				// see if a fresh invoice already exists for this order
+				$need_new_invoice = false;
+        $result = db_result(db_query("SELECT invoice_id FROM {uc_payment_bitpay} WHERE order_id = %d", $arg1->order_id));
+				// if no valid invoice is found, we need a new one
+        if (($result === false) || (!is_string($result))) {
+				  $need_new_invoice = true;
+				}
+				else {
+				  $resp = bpGetInvoice($result, _get_bp_key());
+					if (is_array($resp)) {
+  				  // check to see if the invoice is expired,
+						// or price or currency have changed
+					  if (($resp['status'] == 'expired') ||
+						    ($resp['price'] != uc_order_get_total($arg1)) ||
+						    ($resp['currency'] != variable_get('uc_bitpay_currency', 'BTC'))) {
+						  // we need a new one
+  						$need_new_invoice = true;
+						}
+					}
+					else {
+					  // if we couldn't get the invoice, assume we need one
+						$need_new_invoice = true;
+					}
+				}
+				
+				// if we need a new Bitpay invoice, create one
+				if ($need_new_invoice) {
+				
+				  // Just in case of invoices created improperly or
+					// expired, let's try to delete any that exist
+					db_query("DELETE FROM {uc_payment_bitpay} WHERE order_id = %d", $arg1->order_id);
+
+  				// Create a new Bitpay invoice, and record the details.				
+	  			// Order ID, total price and passthru data need to be established.
+		  		$order_id = $arg1->order_id;
+			  	$pos_data = 'order=' . $order_id;
+				  $price = uc_order_get_total($arg1);
+
+				  // Array the rest of the order data we need to send.
+  				// Start with notificationURL, notificationEmail
+					// and fullNotifications
+	  			$options = array();
+		  		$site_url = variable_get('uc_bitpay_base_url', $base_url);
+			  	$options['notificationURL'] = $site_url . BITPAY_NOTIFY_URL;
+				  if (variable_get('uc_bitpay_notify_email_active', FALSE)) {
+				    $options['notificationEmail'] = variable_get('uc_bitpay_notify_email', '');
+  				}
+          $options['fullNotifications'] = (variable_get('uc_bitpay_full_notify', 0) == 1);
+
+  				// orderID and API key
+	  			$options['orderID'] = $order_id;
+		  		$options['apiKey'] = _get_bp_key();
+				
+				  // currency
+					$options['currency'] = variable_get('uc_bitpay_currency', 'BTC');
+					
+					// transactionSpeed, redirectURL and physical
+					$options['transactionSpeed'] = variable_get('uc_bitpay_txn_speed', 'low');
+					$rurl = variable_get('uc_bitpay_redirect_url', '');
+					if (!($rurl == '')) {
+					  $options['redirectURL'] = $rurl;
+					}
+					$options['physical'] = (variable_get('uc_bitpay_physical', 1) == 1);
+					
+  				// itemDesc
+					// ??? - UNFINISHED - The 100-char limit is tripping me up
+	  			// code swiped from uc_checkout_pane_cart() in
+		  		// uc_cart_checkout_pane.inc and modified
+			  	$desc = '';
+				  // get the items in the cart and string them together
+  	      $items = uc_cart_get_contents();
+          $context = array(
+            'revision' => 'themed',
+            'type' => 'cart_item',
+            'subject' => array(),
+          );
+          foreach ($items as $item) {
+            $i = check_plain($item->title) . uc_product_get_description($item);
+            $price_info = array(
+              'price' => $item->price,
+              'qty' => $item->qty,
+            );
+            $context['subject'] = array(
+              'cart' => $items,
+              'cart_item' => $item,
+              'node' => node_load($item->nid),
+            );
+            $desc .= $item->qty . 'x ' . $i . ': ' . uc_price($price_info, $context) . '<br />';
+          }
+		  		//$options['itemDesc'] = $desc;
+				  $options['itemDesc'] = 'Generic (and short! Really, 100 chars?!) description.';
+					
+			  	// buyerName
+				  $n = '';
+  				if ($Fn = $arg1->delivery_first_name) {
+	  			  $n = $Fn;
+		  		}
+			  	if ($Ln = $arg1->delivery_last_name) {
+				    if ($n) {
+					    $n .= ' ' . $Ln;
+  					}
+	  				else {
+		  			  $n = $Ln;
+			  		}
+				  }
+  				if ($n) {
+	  			  $options['buyerName'] = $n;
+		  		}
+				
+			  	// buyerAddress1, buyerAddress2, buyerCity,
+				  // buyerState, buyerCountry, and buyerZip
+  				if ($a1 = $arg1->delivery_street1) {
+	  			  $options['buyerAddress1'] = $a1;
+		  		}
+			  	if ($a2 = $arg1->delivery_street2) {
+				    $options['buyerAddress2'] = $a2;
+  				}
+	  			if ($city = $arg1->delivery_city) {
+		  		  $options['buyerCity'] = $city;
+			  	}
+					$s = $arg1->delivery_zone;
+					if (is_numeric($s) && ($s != 0)) {
+					  $s = db_result(db_query("SELECT zone_name FROM {uc_zones} WHERE zone_id = %d", $s));
+						$options['buyerState'] = $s;
+					}
+					elseif (is_string($s) && ($s != '')) {
+					  $options['buyerState'] = $s;
+					}
+	  			if ($z = $arg1->delivery_postal_code) {
+		  		  $options['buyerZip'] = $z;
+			  	}
+				  $country = $arg1->delivery_country;
+          if (is_null($country) || $country == 0) {
+	  			  $country = variable_get('uc_store_country', 840);
+		  		}
+          if (is_numeric($country)) {
+				    $country = uc_country_get_by_id($country);
+  				}
+	  			$options['buyerCountry'] = $country;
+		
+  				// buyerEmail, buyerPhone
+	  			if ($e = $arg1->primary_email) {
+		  		  $options['buyerEmail'] = $e;
+			  	}
+				  if ($p = $arg1->delivery_phone) {
+				    $options['buyerPhone'] = $p;
+  				}
+				
+	  			// now create the invoice
+          $resp = bpCreateInvoice($order_id, $price, $pos_data, $options);
+          // basic acid test to verify it didn't obviously fail
+          if (is_array($resp)) {
+    				// if successful, save the invoice data locally
+            db_query("INSERT INTO {uc_payment_bitpay} (invoice_id, order_id, notify_email, physical, txn_speed) VALUES ('%s', %d, '%s', %d, '%s')",
+            $resp['id'], $order_id, $options['notificationEmail'], $options['physical'], $options['transactionSpeed']);
+				  	$success = TRUE;
+          }
+	  			else {
+		  		  $success = FALSE;
+			  		watchdog('uc_bitpay', 'Bitpay invoice creation failed!', array(), WATCHDOG_ERROR);
+				  }
+					
+				}
+				else {
+				  // a good invoice already exists! nothing left to do
+				  $success = TRUE;
+				}
+
+  				// so long as the invoice now exists, we succeeded
+		  		return !!$success; // two bangs (!) to force it to be a boolean type
+				
+      case 'total':
+			
+			  $fee = uc_bitpay_get_handling_fee($arg1);
+				
+        return $fee;
+
+			case 'submit':
+
+			  // They're attempting to submit the order; check to make sure
+				// they actually paid the Bitpay invoice first (the status of
+				// the invoice should be something other than 'new' or 'expired'.)
+				$invoice_id = db_result(db_query("SELECT invoice_id FROM {uc_payment_bitpay} WHERE order_id = %d", $arg1->order_id));
+				$resp = bpGetInvoice($invoice_id, _get_bp_key());
+				if (($resp['status'] == 'new') || ($resp['status'] == 'expired')) {
+				  // The invoice is still new or is expired; total payment wasn't made in time.
+					$message = t('Full payment was not made on this order. If the invoice has expired and you still wish to make this purchase, please go back and checkout again. If it has expired and you made partial payment, but not full payment, please contact us for a refund or to apply the funds to another order.');
+					
+          return array(array('pass' => FALSE, 'message' => $message));
+				}
+				else {
+				  // The invoice was paid and is in some in-payment or complete state.
+					// Allow the submission, and show the order status as Bitpay pending.
+          uc_order_update_status($arg1->order_id, 'bitpay_pending');
+					return TRUE;
+				}
+		} // end switch - check for order action taken
+	} // end if - check to make sure payment method is 'bitpay'
+	
+} // end function - uc_bitpay_order
+
+
+/**
+ * Payment method callback for the Bitpay payment method
+ */
+function uc_payment_method_bitpay($op, &$order) {
+
+  switch ($op) {
+	
+	  case 'settings':
+		
+		  return uc_bitpay_settings_form();
+			 
+    case 'cart-details':
+
+  		$txt = t('When you proceed to review your order, you will be shown a bitcoin address for payment, along with a QR code of the address.') . '<br /><br />' .
+			t('The price will be converted to bitcoins at the current to-the-minute exchange rate, and you will have ') . BITPAY_INVOICE_EXPIRATION_TIME . t(' minutes to send payment before the invoice expires.');
+ 			$amt = uc_bitpay_get_handling_fee($order);
+			if ($amt > 0) {
+			  $txt .= '<br /><br /><b>' . t('Please note that a bitcoin handling fee of ') . uc_price($amt, array('revision' => 'formatted-original')) . t(' will be added to the final cost.') . '</b>';
+			}
+      $details = $txt;
+      return $details;
+
+    case 'cart-review':
+		  
+			// If in the cart review area, then during the checkout
+			// process we need to show the actual Bitpay invoice inset
+			// neatly into the display pane so the customer can see
+			// the bitcoin address and pay right away, right there.
+			$invoice_id = db_result(db_query("SELECT invoice_id FROM {uc_payment_bitpay} WHERE order_id = %d", $order->order_id));
+			$resp = bpGetInvoice($invoice_id, _get_bp_key());
+			$invoice_url = $resp['url'];
+
+      $review[] = array(
+			  'title' => t('Bitpay invoice'),
+				'data' => uc_bitpay_iframe_form($invoice_url)
+			);
+
+      return $review;
+
+    case 'order-view':
+		case 'customer-view':
+
+  		$invoice_id = db_result(db_query("SELECT invoice_id FROM {uc_payment_bitpay} WHERE order_id = %d", $order->order_id));
+			$txt = t('Bitpay Invoice ID: ') . '<br />';
+			
+			if (empty($invoice_id)) {
+			  // display that there's no invoice ID!
+				$txt .= t('Unknown invoice ID saved');
+			}
+			else {
+			  // display the invoice ID, with a link to the url
+				$resp = bpGetInvoice($invoice_id, _get_bp_key());
+				$url = $resp['url'];
+				$txt .=  '<a href="' . $url . '" target="_blank">' . $invoice_id . '</a>';
+			}
+			
+			return $txt;
+			
+  }
+} // end function - uc_payment_method_bitpay
+
+
+/**
+ * Validate Bitpay payment method settings.
+ * ??? - UNFINISHED - not sure where to hook into this
+ */
+function uc_bitpay_settings_form_validate($form, &$form_state) {
+
+  // prepare to store the prior API key
+	$prior = variable_get('uc_bitpay_current_api_key', '');
+	$err = false;
+	
+  // validate the necessary admin settings
+	// current API key shouldn't be blank
+  $c = $form_state['values']['admin']['uc_bitpay_current_api_key'];
+	if ($c == '') {
+	  $err = true;
+	  form_set_error('uc_bitpay_current_api_key', t('A Bitpay API key is required to use the Bitpay payment method module.'));
+	}
+  // the store website base url shouldn't be blank
+	$c = $form_state['values']['admin']['uc_bitpay_base_url'];
+	if ($c == '') {
+	  $err = true;
+	  form_set_error('uc_bitpay_base_url', t('The website base URL should not be blank; please use the recommended URL rather than none.'));
+	}
+
+	// validate the necessary general settings
+	// fee amount needs to be numeric and either zero or positive
+  $c = $form_state['values']['general']['uc_bitpay_fee_amt'];
+	if (!is_numeric($c)) {
+	  $err = true;
+	  form_set_error('uc_bitpay_fee_amt', t('Handling fee amount must be a numeric value.'));
+	}
+	elseif ($c < 0) {
+	  $err = true;
+	  form_set_error('uc_bitpay_fee_amt', t('Handling fee amount must be zero or positive.'));
+	}
+
+	// finish adjusting the prior API key
+	if (!$err) {
+	  variable_set('uc_bitpay_prior_api_key', $prior);
+		$form_state['values']['admin']['uc_bitpay_prior_api_key'] = $prior;
+	}
+	
+} // end function - uc_bitpay_settings_form_validate
+
+
+/**
+ * Implementation of hook_line_item
+ *
+ * Jay's tutorial on line items at:
+ *   (http://www.jaypan.com/tutorial/ubercart-creating-line-items-tutorial)
+ *
+ * was incredibly helpful in finishing the line item code.
+ *
+ */
+function uc_bitpay_line_item() {
+
+  $items[] = array(
+    'id' => 'uc_bitpay_fee', // You will use this ID in the javascript 
+    'title' => t('Bitcoin handling fee'), // This is the text that will be displayed
+    'callback' => 'uc_bitpay_line_item_callback', // This is the callback function
+    'weight' => 5, // This is the position of the line item in the total process
+    'default' => TRUE,
+    'stored' => TRUE, // This tells Ubercart to store the submitted data
+    'calculated' => FALSE, // For line items that need to be calculated, not just displayed
+    //'add_list' => TRUE,
+    'display_only' => FALSE
+	);
+	
+	return $items;
+}
+
+
+/**
+ * Callback function for uc_bitpay_line_item
+ */
+function uc_bitpay_line_item_callback($op, $arg) {
+
+  $lines = array();
+
+	
+  // I'd love to be able to show this on the checkout page;
+	// but since we may not actually have an order created yet
+	// on that page, there's nowhere yet to look and see if the
+	// customer chose Bitpay as payment method. Therefore, we
+	// would always be calculating and displaying the fee if we
+	// didn't deliberately kick out, never showing the fee if
+	// the order doesn't exist. The customer will just have to
+	// rely on the message given when they choose 'Bitpay'.
+	// For future alteration: refer to uc_payment_checkout_pane.inc
+	// to locate the <div> with id 'payment_details' and use
+	// Javascript to detect when that changes to inclue 'bitcoin'
+	// and display the handling fee line item.
+	
+	if ($arg->payment_method != 'bitpay') {
+	  return $lines;
+	}
+
+	switch ($op) {
+	  
+		case 'display':
+
+			$fee = uc_bitpay_get_handling_fee($arg1);
+			// if there's a fee, we add the line item
+			// and return the lines for display
+			if ($fee > 0) {
+       	$lines[] = array(
+          'id' => 'uc_bitpay_fee',
+          'title' => t('Bitcoin handling fee'),
+          'amount' => $fee,
+        );
+			}
+
+			return $lines;
+  }
+} // end function - uc_bitpay_line_item_callback
+
+
+/**
+ * Creates an inset iframe displaying the live Bitpay invoice.
+ * Requires the full URL of the invoice.
+ */
+function uc_bitpay_iframe_form($url) {
+
+  $iframe =
+	  '<iframe width="450px" margin-left="auto" margin-right="auto" ' .
+		  'height="153px" src="' . $url . '&view=iframe">' .
+		'Your browser does not support IFRAMEs. Please click ' .
+		  '<a href="' . $url . '" target="_blank">HERE</a> ' .
+		'to make payment, then return to this page to complete your order.' .
+		'</iframe>';
+
+	return $iframe;
+}
+
+ 
+/**
+ * Caluculate the actual cost of any bitcoin handling fees set, if any
+ */
+function uc_bitpay_get_handling_fee($arg, $subtotal = false) {
+
+	if ($subtotal === false) {
+	  if (!isset($arg->order_id)) {
+  	  // we need to calculate the subtotal by hand,
+			// since there's no actual order given
+			$subtotal = 0;
+      $context = array();
+      $contents = uc_cart_get_contents();
+      foreach ($contents as $item) {
+        $price_info = array(
+          'price' => $item->price,
+          'qty' => $item->qty,
+        );
+        $context['revision'] = 'altered';
+        $context['type'] = 'cart_item';
+        $context['subject'] = array(
+          'cart' => $contents,
+          'cart_item' => $item,
+          'node' => node_load($item->nid),
+        );
+        $total = uc_price($price_info, $context);
+        $subtotal += $total;
+      }
+		}
+		else {
+  	  $subtotal = uc_order_get_total($arg, TRUE);
+		}
+	}
+	
+	$amt = trim(variable_get('uc_bitpay_fee_amt', '0'));
+	if (!is_numeric($amt)) {
+	  $amt = 0;
+	}
+
+	switch (variable_get('uc_bitpay_fee_type', 'percentage')) {
+		case 'percentage':
+			$markup = ($subtotal * $amt) / 100;
+			break;
+		case 'multiplier':
+			$markup = $subtotal * $amt;
+			break;
+		case 'addition':
+		default:
+			$markup = $amt;
+	}
+	
+	// I don't see any way to get the precision
+	// right without doing it by hand, so...
+	$prec = variable_get('uc_currency_prec', 2);
+	$factor = pow(10, $prec);
+	$large_markup = $markup * $factor;
+	$markup = floor($large_markup + 0.5) / $factor; // round up
+
+	return $markup;
+}
+
+
+/**
+ * Returns an array of current Bitpay accepted currencies
+ */
+function _uc_bitpay_currency_array() {
+  $currencies = array(
+	  'BTC' => '(BTC) ' . t('Bitcoin'),
+		'USD' => '(USD) ' . t('US Dollar'),
+		'EUR' => '(EUR) ' . t('Eurozone Euro'),
+	  'GBP' => '(GBP) ' . t('British Pound'),
+		'AUD' => '(AUD) ' . t('Australian Dollar'),
+		'BGN' => '(BGN) ' . t('Bulgarian Lev'),
+		'BRL' => '(BRL) ' . t('Brasilian Real'),
+		'CAD' => '(CAD) ' . t('Canadian Dollar'),
+		'CHF' => '(CHF) ' . t('Swiss Franc'),
+		'CNY' => '(CNY) ' . t('Chinese Yuan'),
+		'CZK' => '(CZK) ' . t('Czech Koruna'),
+		'DKK' => '(DKK) ' . t('Danish Krone'),
+		'HKD' => '(HKD) ' . t('Hong Kong Dollar'),
+		'HRK' => '(HRK) ' . t('Croatian Kuna'),
+		'HUF' => '(HUF) ' . t('Hungarian Forint'),
+		'IDR' => '(IDR) ' . t('Indonesian Rupiah'),
+		'ILS' => '(ILS) ' . t('Isreali Shekel'),
+		'INR' => '(INR) ' . t('Indian Rupee'),
+		'JPY' => '(JPY) ' . t('Japanese Yen'),
+		'KRW' => '(KRW) ' . t('South Korean Won'),
+		'LTL' => '(LTL) ' . t('Lithuanian Litas'),
+		'LVL' => '(LVL) ' . t('Latvian Lats'),
+		'MXN' => '(MXN) ' . t('Mexican Peso'),
+		'MYR' => '(MYR) ' . t('Malaysian Ringgit'),
+		'NOK' => '(NOR) ' . t('Norwegian Krone'),
+		'NZD' => '(NZD) ' . t('New Zealand Dollar'),
+		'PHP' => '(PHP) ' . t('Philippine Peso'),
+		'PLN' => '(PLN) ' . t('Polish Zloty'),
+		'RON' => '(RON) ' . t('New Romanian Leu'),
+		'RUB' => '(RUB) ' . t('Russian Rouble'),
+		'SEK' => '(SEK) ' . t('Swedish Krona'),
+		'SGD' => '(SGD) ' . t('Singapore Dollar'),
+		'THB' => '(THB) ' . t('Thai Baht'),
+		'TRY' => '(TRY) ' . t('Turkish Lira'),
+		'ZAR' => '(ZAR) ' . t('South African Rand')
+	);
+	
+	return $currencies;
+}
