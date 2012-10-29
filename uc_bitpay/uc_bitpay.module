@@ -201,7 +201,7 @@ function uc_bitpay_payment_method() {
     'desc' => t('Make a payment using bitcoins.'),
     'callback' => 'uc_payment_method_bitpay',
     'weight' => 4,
-    'checkout' => TRUE,
+    'checkout' => FALSE,
     'no_gateway' => TRUE,
   );
 
@@ -217,7 +217,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 	global $base_url;
 	
 	// check for order 'save' even if payment method isn't 'bitpay';
-	// they may have changed if from 'bitpay', so if they're saving,
+	// they may have changed it from 'bitpay', so if they're saving,
 	// and we find a bitcoin handling fee line item, we should remove it
 	if ($op == 'save') {
     foreach($arg1->line_items as $k => $line_item) {
@@ -321,7 +321,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
           else {
             $ending = '';
           }
-          if (strlen($desc) + strlen($ending)) > 100) {
+          if ((strlen($desc) + strlen($ending)) > 100) {
             $desc = substr($desc, 0, (97 - strlen($ending))) . $ending . '...';
           }
 		  		$options['itemDesc'] = $desc;
@@ -587,8 +587,8 @@ function uc_bitpay_line_item_callback($op, $arg) {
 	// rely on the message given when they choose 'Bitpay'.
 	// For future alteration: refer to uc_payment_checkout_pane.inc
 	// to locate the <div> with id 'payment_details' and use
-	// Javascript to detect when that changes to inclue 'bitcoin'
-	// and display the handling fee line item.
+	// Javascript to detect when that changes to include 'bitcoin',
+	// then display the handling fee line item.
 	
 	if ($arg->payment_method != 'bitpay') {
 	  return $lines;
