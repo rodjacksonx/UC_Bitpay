@@ -78,7 +78,6 @@ function uc_bitpay_schema() {
     ),
     'indexes' => array(
       'order_id' => array('order_id'),
-			'invoice_time' => array('invoice_time'),
     ),
     'primary key' => array('invoice_id')
   );
