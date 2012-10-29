@@ -305,32 +305,26 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 					$options['physical'] = (variable_get('uc_bitpay_physical', 1) == 1);
 					
   				// itemDesc
-					// ??? - UNFINISHED - The 100-char limit is tripping me up
-	  			// code swiped from uc_checkout_pane_cart() in
-		  		// uc_cart_checkout_pane.inc and modified
+		  		// NOTE: There is a 100-char limit on descriptions;
+		  		// going over the limit causes the invoice to be rejected.
 			  	$desc = '';
-				  // get the items in the cart and string them together
+				  // get the items in the cart
   	      $items = uc_cart_get_contents();
-          $context = array(
-            'revision' => 'themed',
-            'type' => 'cart_item',
-            'subject' => array(),
-          );
           foreach ($items as $item) {
-            $i = check_plain($item->title) . uc_product_get_description($item);
-            $price_info = array(
-              'price' => $item->price,
-              'qty' => $item->qty,
-            );
-            $context['subject'] = array(
-              'cart' => $items,
-              'cart_item' => $item,
-              'node' => node_load($item->nid),
-            );
-            $desc .= $item->qty . 'x ' . $i . ': ' . uc_price($price_info, $context) . '<br />';
+						// describe the details of the first item, then break & continue
+            $desc = $item->qty . 'x ' . $item->title;
+            break;
           }
-		  		//$options['itemDesc'] = $desc;
-				  $options['itemDesc'] = 'Generic (and short! Really, 100 chars?!) description.';
+          if (count($items) > 1) {
+            $ending = ', etc.';
+          }
+          else {
+            $ending = '';
+          }
+          if (strlen($desc) + strlen($ending)) > 100) {
+            $desc = substr($desc, 0, (97 - strlen($ending))) . $ending . '...';
+          }
+		  		$options['itemDesc'] = $desc;
 					
 			  	// buyerName
 				  $n = '';
@@ -568,7 +562,6 @@ function uc_bitpay_line_item() {
     'default' => TRUE,
     'stored' => TRUE, // This tells Ubercart to store the submitted data
     'calculated' => FALSE, // For line items that need to be calculated, not just displayed
-    //'add_list' => TRUE,
     'display_only' => FALSE
 	);
 	
