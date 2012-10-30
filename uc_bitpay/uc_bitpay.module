@@ -254,6 +254,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 	
     switch ($op) {
 
+      case 'new':
       case 'save':
 
         // if there's a fee now, add the line item
