@@ -21,7 +21,7 @@ define ('BITCOIN_ACCEPTED_LOGO_FILE', "/bitcoin-accepted.png");
 
 define ('BITCOIN_ACCEPTED_LOGO_PATH', base_path() . drupal_get_path('module', 'uc_bitpay') . BITCOIN_ACCEPTED_LOGO_FILE);
 
-define ('BITPAY_NOTIFY_URL', "/uc_bitpay/notifications");
+define ('BITPAY_NOTIFY_URL', "uc_bitpay/notifications");
 
 define ('BITPAY_INVOICE_EXPIRATION_TIME', "15"); // in minutes; keep as a string
 
@@ -308,7 +308,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 					// and fullNotifications
 	  			$options = array();
 		  		$site_url = variable_get('uc_bitpay_base_url', $base_url);
-			  	$options['notificationURL'] = $site_url . BITPAY_NOTIFY_URL;
+			  	$options['notificationURL'] = $site_url . '/' . BITPAY_NOTIFY_URL;
 				  if (variable_get('uc_bitpay_notify_email_active', FALSE)) {
 				    $options['notificationEmail'] = variable_get('uc_bitpay_notify_email', '');
   				}
