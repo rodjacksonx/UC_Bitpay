@@ -85,6 +85,16 @@ function uc_bitpay_settings_form() {
     '#default_value' => variable_get('uc_bitpay_base_url', $base_url),
     '#description' => t("Base URL of the store website. It is presented here primarily as an option to modify whether 'http' or 'https' is used. If in doubt, please use the store's internal base URL of: ") . '<b>' . $base_url . '</b>',
   );
+  $form['admin']['uc_bitpay_debug_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Debug mode activation'),
+    '#options' => array(
+      0 => t('Allow anyone to pay with bitcoins.'),
+      1 => t('Only allow administrators to pay with bitcoins.')
+		),
+    '#default_value' => variable_get('uc_bitpay_debug_mode', 0),
+    '#description' => t('This allows restricting bitcoin payments to only store administrators, primarily for testing and/or debugging purposes.'),
+  );
 
   $form['general'] = array(
     '#type' => 'fieldset',
@@ -228,7 +238,9 @@ function uc_bitpay_order($op, $arg1, $arg2) {
     }
   }
 	
-  if ($arg1->payment_method == 'bitpay') {
+  if (($arg1->payment_method == 'bitpay') &&
+      (variable_get('uc_bitpay_debug_mode', 0) &&
+        user_access('access administration menu'))) {
 	
     switch ($op) {
 
@@ -431,7 +443,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 					return TRUE;
 				}
 		} // end switch - check for order action taken
-	} // end if - check to make sure payment method is 'bitpay'
+	} // end if - check to make sure payment method is 'bitpay', etc.
 	
 } // end function - uc_bitpay_order
 
@@ -590,7 +602,9 @@ function uc_bitpay_line_item_callback($op, $arg) {
 	// Javascript to detect when that changes to include 'bitcoin',
 	// then display the handling fee line item.
 	
-	if ($arg->payment_method != 'bitpay') {
+	if (($arg->payment_method != 'bitpay') ||
+	    (variable_get('uc_bitpay_debug_mode', 0) &&
+	     !user_access('access administration menu'))) {
 	  return $lines;
 	}
 
