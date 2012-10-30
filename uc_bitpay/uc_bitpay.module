@@ -197,25 +197,35 @@ function uc_bitpay_help($path, $arg) {
  * Implements hook_payment_method().
  */
 function uc_bitpay_payment_method() {
-  $title = '<img src="' . BITPAY_WEBSITE . BITPAY_SMALL_LOGO_FILE . '" ' .
-	         'style="position:relative; top:5px; margin-right:6px;" />' .
-					 '<img src="' . BITCOIN_ACCEPTED_LOGO_PATH .
-					 '" style="position:relative; top:5px; margin-right:6px;" />' .
-           t('Bitpay - pay with Bitcoins via Bitpay.');
 
-  $methods[] = array(
-    'id' => 'bitpay',
-    'name' => t('Bitpay'),
-    'title' => $title,
-    'review' => t('Bitcoin via Bitpay'),
-    'desc' => t('Make a payment using bitcoins.'),
-    'callback' => 'uc_payment_method_bitpay',
-    'weight' => 4,
-    'checkout' => FALSE,
-    'no_gateway' => TRUE,
-  );
+  // only show it if we aren't in debug mode, or are an admin
+  if ((!variable_get('uc_bitpay_debug_mode', 0) ||
+        user_access('access administration menu'))) {
 
-  return $methods;
+    $title = '<img src="' . BITPAY_WEBSITE . BITPAY_SMALL_LOGO_FILE . '" ' .
+	           'style="position:relative; top:5px; margin-right:6px;" />' .
+					   '<img src="' . BITCOIN_ACCEPTED_LOGO_PATH .
+					   '" style="position:relative; top:5px; margin-right:6px;" />' .
+             t('Bitpay - pay with Bitcoins via Bitpay.');
+
+    $methods[] = array(
+      'id' => 'bitpay',
+      'name' => t('Bitpay'),
+      'title' => $title,
+      'review' => t('Bitcoin via Bitpay'),
+      'desc' => t('Make a payment using bitcoins.'),
+      'callback' => 'uc_payment_method_bitpay',
+      'weight' => 4,
+      'checkout' => FALSE,
+      'no_gateway' => TRUE,
+    );
+
+    return $methods;
+  
+  }
+  else {
+    return array();
+  }
 }
 
 
