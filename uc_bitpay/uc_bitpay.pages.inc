@@ -234,20 +234,6 @@ function uc_bitpay_notification() {
 } // end function - uc_bitpay_notification
 
 
-/*
-      case 'Completed':
-        if (abs($payment_amount - $order->order_total) > 0.01) {
-          watchdog('uc_paypal', 'Payment @txn_id for order @order_id did not equal the order total.', array('@txn_id' => $txn_id, '@order_id' => $order->order_id), WATCHDOG_WARNING, l(t('view'), 'admin/store/orders/'. $order->order_id));
-        }
-        $comment = t('PayPal transaction ID: @txn_id', array('@txn_id' => $txn_id));
-        uc_payment_enter($order_id, 'paypal_wps', $payment_amount, $order->uid, NULL, $comment);
-        uc_cart_complete_sale($order);
-        uc_order_comment_save($order_id, 0, t('Payment of @amount @currency submitted through PayPal.', array('@amount' => uc_price($payment_amount, $context, $options), '@currency' => $payment_currency)), 'order', 'payment_received');
-        uc_order_comment_save($order_id, 0, t('PayPal IPN reported a payment of @amount @currency.', array('@amount' => uc_price($payment_amount, $context, $options), '@currency' => $payment_currency)));
-        break;
-*/
-
-
 /**
  * Sends out an email alert from the Bitpay module
  */
