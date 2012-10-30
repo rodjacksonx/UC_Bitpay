@@ -264,8 +264,10 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 					if (is_array($resp)) {
   				  // check to see if the invoice is expired,
 						// or price or currency have changed
+						$text_total = uc_order_get_total($arg1);
+						$text_total .= '';
 					  if (($resp['status'] == 'expired') ||
-						    ($resp['price'] != uc_order_get_total($arg1)) ||
+						    ($resp['price'] != $text_total) ||
 						    ($resp['currency'] != variable_get('uc_bitpay_currency', 'BTC'))) {
 						  // we need a new one
   						$need_new_invoice = true;
@@ -324,7 +326,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
   	      $items = uc_cart_get_contents();
           foreach ($items as $item) {
 						// describe the details of the first item, then break & continue
-            $desc = $item->qty . 'x ' . $item->title;
+            $desc = trim($item->qty . 'x ' . $item->title);
             break;
           }
           if (count($items) > 1) {
@@ -335,6 +337,9 @@ function uc_bitpay_order($op, $arg1, $arg2) {
           }
           if ((strlen($desc) + strlen($ending)) > 100) {
             $desc = substr($desc, 0, (97 - strlen($ending))) . $ending . '...';
+          }
+          else {
+            $desc .= $ending;
           }
 		  		$options['itemDesc'] = $desc;
 					
