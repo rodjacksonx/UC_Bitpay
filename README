@@ -1,9 +1,17 @@
-©2012 Warehouse Guitar Speakers. Permission is hereby granted to any person obtaining a copy of this software and associated documentation for use and/or modification provided such use and/or modification does not hinder any other person's use and/or modification.
+©2012 Warehouse Guitar Speakers.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+   ----------
 
-WARNING: This code is beta level. It has been through testing, and is very functional, but may have bugs. Use at your own risk!
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-The folder 'uc_bitpay' is a payment method module intended for use with version 6.x of Drupal, and version 2.x of Ubercart.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+   ----------
+
+WARNING: This code is currently BETA. It has been through testing, and is stable and very functional, but may have bugs. Use at your own risk!
+
+   ----------
+
+UC_BITPAY is a payment method module intended for use with version 6.x of Drupal, and version 2.x of Ubercart.
 
 This module allows e-commerce merchants who have signed up with Bitpay (at https://bitpay.com) to use their API to accept bitcoins for online payments. The funds are converted by Bitpay to your local currency (in exchange for a fee) and a direct deposit is made into your bank. They allow deposits in US Dollars, Canadian Dollars, Mexican Pesos, Eurozone Euros, and British Pounds. Alternatively, they can simply forward the bitcoins to a bitcoin address of your choosing, for a much lower fee.

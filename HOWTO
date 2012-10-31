@@ -1,0 +1,21 @@
+HOW-TO: INSTRUCTIONS FOR USING UC_BITPAY
+
+This module is designed for use with version 6.x of Drupal, and version 2.x of Ubercart. It will allow your e-commerce website to accept payment in Bitcoin, have the funds converted to your local currency, and then receive an ACH transfer to your bank account.
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+To use this module:
+
+(1) Ensure you have the proper versions of Drupal (6.x) and Ubercart (2.x).
+
+(2) Sign up for a merchant account with Bitpay, at https://bitpay.com. Be sure to read all provided information thoroughly, and to understand the fees that will be charged.
+
+(3) On your Bitpay merchant page, provide deposit information. This can be information for your bank account, or a forwarding bitcoin address, or some mixture thereof (you can set the funds to be converted to different currencies in differing proportions.) You should also create at least one API key.
+
+(4) Place the folder 'uc_bitpay' into the proper location on your server. You will want to first find the 'ubercart' module directory; within that directory, go to the 'payment' subdirectory, where you will find the different payment modules. Copy the 'uc_bitpay' folder to that subdirectory.
+
+(5) Enable the module. As an administrator on your website, view the 'Modules' section of 'Site Building'. The module will be found under 'Ubercart - payment'. Check 'Bitpay' and save the configuration.
+
+(6) Configure the module settings. Navigate to 'Store administration' -> 'Configuration' -> 'Payment settings' -> 'Edit' -> 'Payment methods'. The settings have descriptions to let you know what they are for, and whether or not to set them. At the very least, you will need to check the Administration settings to add your API key, and if desired, your Notification email address. You should also check that your Store website base URL is using 'https' instead of 'http'. NOTE: Please be very sure about how 'Transaction speed' operates before changing it from 'LOW'. (It is recommended that 'LOW' is used whenever possible.)
+
+(7) Enable Bitpay as a payment method, and save the configuration. You're now ready to start accepting bitcoins as payment!
