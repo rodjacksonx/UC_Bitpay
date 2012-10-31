@@ -16,7 +16,7 @@
 function uc_bitpay_notification() {
 
   // DEBUG CODE
-	//variable_set('uc_bitpay_notify_check', time());
+	variable_set('uc_bitpay_notify_check', time());
 	
 	// Use bpVerifyNotification to verify the source is authentic, and to
 	// convert the $_POST data to an array containing the invoice data.

@@ -504,10 +504,12 @@ function uc_payment_method_bitpay($op, &$order) {
 			$resp = bpGetInvoice($invoice_id, _get_bp_key());
 			$invoice_url = $resp['url'];
 
-      $review[] = array(
+      /*$review[] = array(
 			  'title' => t('Bitpay invoice'),
 				'data' => uc_bitpay_iframe_form($invoice_url)
-			);
+			);*/
+			
+			$review = uc_bitpay_iframe_from($invoice_url);
 
       return $review;
 
