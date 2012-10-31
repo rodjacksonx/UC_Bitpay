@@ -14,6 +14,9 @@
  * Process Invoice Status Notifiations from Bitpay.
  */
 function uc_bitpay_notification() {
+
+  // DEBUG CODE
+	variable_set('uc_bitpay_notify_check', time());
 	
 	// Use bpVerifyNotification to verify the source is authentic, and to
 	// convert the $_POST data to an array containing the invoice data.
@@ -30,7 +33,7 @@ function uc_bitpay_notification() {
 
 	// if we received a string instead of an array, we have an error
 	if (is_string($notify)) {
-    watchdog('uc_bitpay', 'Bitpay notification error: ' . $notify, array(), WATCHDOG_ERROR);
+
   	// if it's due to a bad API key, alert the notification email address
 		if (substr($notify, 0, strlen($checkerr)) == $checkerr) {
 		  // first construct the alert to email
@@ -50,8 +53,6 @@ function uc_bitpay_notification() {
   // get the order ID from our database
 	$order_id = db_query("SELECT order_id FROM {uc_payment_bitpay} WHERE invoice_id = '%s'", $notify['id']);
 
-  /*watchdog('uc_bitpay', 'Receiving Bitpay notification at URL for order @order_id. <pre>@debug</pre>', array('@order_id' => $order_id, '@debug' => variable_get('uc_bitpay_debug_notification', FALSE) ? print_r($_POST, TRUE) : ''), WATCHDOG_NOTICE);*/
-
   $order = uc_order_load($order_id);
 
   if ($order == FALSE) {
@@ -69,9 +70,7 @@ function uc_bitpay_notification() {
 	  // 'expired' or 'invalid' for any DB updates; it does
 	  // nothing if the invoice is merely 'paid'.
 	  case 'paid':
-      // just alert the watchdog
-			watchdog('uc_bitpay', "Bitpay sent an invoice status notification with an updated status of PAID for invoice ID !id, order !o. URL: !u", array(
-			  '!id' => $notify['id'],	'!o' => $order_id, '!u' => $notify['url']), WATCHDOG_NOTICE);
+      // just save a comment
       uc_order_comment_save($order_id, 0, t("Customer has sent the bitcoin transaction for payment, but it has not confirmed yet."), 'admin');
 
 	    break;
@@ -158,9 +157,6 @@ function uc_bitpay_notification() {
   	  // send the email
       $success = uc_bitpay_mail($email_text, 3); // priority 3 (normal)
 			
-			watchdog('uc_bitpay', "Bitpay sent an invoice status notification with an updated status of EXPIRED for invoice ID !id, order !o. URL: !u", array(
-			  '!id' => $notify['id'],	'!o' => $order_id, '!u' => $notify['url']), WATCHDOG_NOTICE);
-
 		  break;
 		
 	  // INVALID: This status occurs when the invoice was considered
@@ -190,9 +186,6 @@ function uc_bitpay_notification() {
   	  // send the email
       $success = uc_bitpay_mail($email_text, 3); // priority of 3 (normal)
 			
-			watchdog('uc_bitpay', "Bitpay sent an invoice status notification with an updated status of INVALID for invoice ID !id, order @o. URL: !u", array(
-			  '!id' => $notify['id'],	'!o' => $order_id, '!u' => $notify['url']), WATCHDOG_WARNING);
-
       uc_order_comment_save($order_id, 0, t("The Bitpay invoice for this order has been marked INVALID. You may neet to contact Bitpay to resolve the issue."), 'admin');
 
 		  break;
@@ -225,10 +218,6 @@ function uc_bitpay_notification() {
       // send the email
       $success = uc_bitpay_mail($email_text, 1); // priority of 1 (high)
 			
-			watchdog('uc_bitpay', "Bitpay sent an invoice status notification with an usual status of !status for invoice ID !id, order @o. URL: !u", array(
-			  '!status' => strtoupper($notify['status']), '!id' => $notify['id'],
-				'!o' => $order_id, '!u' => $notify['url']), WATCHDOG_ERROR);
-		
   } // end switch - examining the invoice status
 
 } // end function - uc_bitpay_notification
