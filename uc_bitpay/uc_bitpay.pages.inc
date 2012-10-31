@@ -16,7 +16,7 @@
 function uc_bitpay_notification() {
 
   // DEBUG CODE
-	variable_set('uc_bitpay_notify_check', time());
+	//variable_set('uc_bitpay_notify_check', time());
 	
 	// Use bpVerifyNotification to verify the source is authentic, and to
 	// convert the $_POST data to an array containing the invoice data.
@@ -37,11 +37,7 @@ function uc_bitpay_notification() {
   	// if it's due to a bad API key, alert the notification email address
 		if (substr($notify, 0, strlen($checkerr)) == $checkerr) {
 		  // first construct the alert to email
-      $email_text = t("Your website has just received a") . " Bitpay " .
-		    t("invoice status notification with what appears to be an invalid ") . " API " .
-			  t("key. ") . t("You will want to have your web developer investigate this " .
-			  "situation if you are unsure of the reason behind it ") .
-			  t("(such as recently changed") . " API " . t("keys.)");
+      $email_text = t("Your website has just received a Bitpay invoice status notification with what appears to be an invalid API key. You will want to have your web developer investigate this situation if you are unsure of the reason behind it (such as recently changed API keys.)");
       $email_text = wordwrap($email_text, 65, "\r\n");
 		  $email_text .= "\r\n";
   	  // send the email
@@ -52,13 +48,7 @@ function uc_bitpay_notification() {
 
   // get the order ID from our database
 	$order_id = db_query("SELECT order_id FROM {uc_payment_bitpay} WHERE invoice_id = '%s'", $notify['id']);
-
   $order = uc_order_load($order_id);
-
-  if ($order == FALSE) {
-    watchdog('uc_bitpay', 'Bitpay notification attempted for non-existent order @order_id.', array('@order_id' => $order_id), WATCHDOG_WARNING);
-    return;
-  }
 
   // on certain invoice status changes, do certain things
   switch ($notify['status']) {
@@ -123,39 +113,15 @@ function uc_bitpay_notification() {
 		
 	  // EXPIRED: This status reflects that the buyer did not submit
 	  // full payment within the 15-minute window Bitpay allows, and
-	  // thus the invoice is no longer to be used. This is effectively
-	  // a cancellation of the order, as a new invoice will need to be
-	  // created if the buyer still wishes to pay. This module will
-	  // update the order to cancel it upon receiving this status, and
-	  // will send an email to the notification email address so the
-	  // payments department can be alerted.
+	  // thus the invoice is no longer to be used. As of 2012-10-31,
+	  // Bitpay does not actively send a notification when an invoice
+	  // becomes invalid. This code will be left in on the chance that
+	  // they eventually do, but it is being simplified to merely leave
+	  // a comment should it occur.
 	  case 'expired':
 	
-	    // cancel the order
-			$state = uc_order_status_data($order->order_status, 'state');
-      if (($state == 'in_checkout') || ($state == 'post_checkout')) {
-        uc_order_update_status($order->order_id, uc_order_state_default('canceled'));
-      }
-      uc_order_comment_save($order_id, 0, t("The Bitpay invoice for this order has expired, and the order has been canceled."), 'admin');
-
-		  // construct an alert to email
-      $email_text = "Bitpay " .
-		    t("has just updated an invoice status as") . ": '" . $notify['status'] . "'. " .
-			  t("Your payments department should be informed of this status update; ") .
-			  t("it means that payment for the invoice was not received within the alloted window of time, ") .
-			  t("and the related order is effectively canceled. ") .
-			  t("Please note that should the buyer still wish to complete the order, ") .
-			  t("a new order and a new invoice will need to be created. ") .
-			  t("If the buyer sent funds to the") . " bitcoin " .
-			  t("address on the invoice after it expired") . ", Bitpay " .
-			  t("will need to be contacted so that the funds can be credited to a new invoice.");
-      $email_text = wordwrap($email_text, 65, "\r\n");
-		  $email_text .= "\r\n\r\n" .
-	  	  t("Invoice") . " ID: " . $notify['id'] . "\r\n" .
-		    t("Invoice") . " URL: " . $notify['url'] . "\r\n" .
-			  t("Order")   . " ID: " . $order_id . "\r\n";
-  	  // send the email
-      $success = uc_bitpay_mail($email_text, 3); // priority 3 (normal)
+	    // just make a comment
+      uc_order_comment_save($order_id, 0, t("The current Bitpay invoice for this order has expired."), 'admin');
 			
 		  break;
 		
@@ -174,10 +140,8 @@ function uc_bitpay_notification() {
 	
 		  // construct an alert to email
       $email_text = "Bitpay " .
-		    t("has just updated an invoice status as") . ": '" . $notify['status'] . "'. " .
-			  t("Your payments department should be informed of this status update") . "; Bitpay " .
-        t("may need to be contacted to confirm that the merchant account is credited after " .
-			  "the payment eventually confirms on the bitcoin network.");
+		    t("has just updated an invoice status as: '") . $notify['status'] .
+			  t("'. Your payments department should be informed of this status update; Bitpay may need to be contacted to confirm that the merchant account is credited after the payment eventually confirms on the bitcoin network.");
       $email_text = wordwrap($email_text, 65, "\r\n");
 		  $email_text .= "\r\n\r\n" .
 	  	  t("Invoice") . " ID: " . $notify['id'] . "\r\n" .
@@ -206,10 +170,8 @@ function uc_bitpay_notification() {
 			
 		  // construct an alert to email
       $email_text = "Bitpay " .
-		    t("has just sent an invoice status notification with an unusal status of") .
-			  ": '" . $notify['status'] . "' " . t("to your website. ") .
-			  t("Your website developer should be informed of this status update ") .
-			  t("to ascertain what further action, if any, needs to be taken.");
+		    t("has just sent an invoice status notification with an unusal status of: '" .
+		    $notify['status'] . t("' to your website. Your website developer should be informed of this status update to ascertain what further action, if any, needs to be taken.");
       $email_text = wordwrap($email_text, 65, "\r\n");
 		  $email_text .= "\r\n\r\n" .
 	  	  t("Invoice") . " ID: " . $notify['id'] . "\r\n" .
@@ -226,7 +188,7 @@ function uc_bitpay_notification() {
 /**
  * Sends out an email alert from the Bitpay module
  */
-function uc_bitpay_mail($txt, $priority) {
+function uc_bitpay_mail($txt, $priority = 3) {
 
 	$success = false;
 	
@@ -236,15 +198,14 @@ function uc_bitpay_mail($txt, $priority) {
 	  // prepare to construct the message array we need
 		$m = array();
     // include the preface to the body of the email
-  	$preface = t("ATTENTION: ") . t("This is an alert from the") .
-		           " Bitpay " . t("module of your website.") . "\r\n\r\n";
+  	$preface = t("ATTENTION: This is an alert from the Bitpay module of your website.") . "\r\n\r\n";
     // establish the body of the email
 		$m['body'] = $preface . $txt;
     // get the 'From' address
 		$from = _get_bp_email_from_address();
 	  // setup the other email elements
 		$m['id'] = 'uc_bitpay_alert';
-		$m['subject'] = 'Bitpay ' . t('Invoice Update Notification Warning');
+		$m['subject'] = t('Bitpay Invoice Status Update Notification');
 		$m['to'] = $to;
 		$m['from'] = $from;
 		// finalize the email headers

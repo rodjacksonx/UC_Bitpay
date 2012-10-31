@@ -51,12 +51,14 @@ function uc_bitpay_settings_form() {
   );
 	$form['admin']['uc_bitpay_prior_api_key'] = array(
     '#type' => 'item',
-    '#title' => t('Prior Bitpay API key: ') .
-		            variable_get('uc_bitpay_prior_api_key','') . '<br />' .
+    '#title' => t('Prior Bitpay API key'),
+    '#description' =>
 		            t('This is retained on the chance that you change API keys while ') .
 								t('Bitpay invoices are still pending. To clear, change the current ') .
 								t('API key to a random number and save the changes, then re-enter ') .
 								t('the current API key again and save the changes again.'),
+		'#value' => "'<i>" . variable_get('uc_bitpay_prior_api_key', '') . "</i>'",
+
 	);
   $form['admin']['uc_bitpay_notify_email'] = array(
     '#type' => 'textfield',
