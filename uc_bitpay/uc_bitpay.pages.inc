@@ -170,7 +170,7 @@ function uc_bitpay_notification() {
 			
 		  // construct an alert to email
       $email_text = "Bitpay " .
-		    t("has just sent an invoice status notification with an unusal status of: '" .
+		    t("has just sent an invoice status notification with an unusal status of: '") .
 		    $notify['status'] . t("' to your website. Your website developer should be informed of this status update to ascertain what further action, if any, needs to be taken.");
       $email_text = wordwrap($email_text, 65, "\r\n");
 		  $email_text .= "\r\n\r\n" .
