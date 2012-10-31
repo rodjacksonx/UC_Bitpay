@@ -166,13 +166,21 @@ function uc_bitpay_menu() {
 	// when being notified of status changes to an invoice.
   $items[BITPAY_NOTIFY_URL] = array(
     'title' => 'Bitpay Notifications',
-    'access callback' => TRUE,
+    'access callback' => 'uc_bitpay_notification_access',
 		'page callback' => 'uc_bitpay_notification',
     'type' => MENU_CALLBACK,
     'file' => 'uc_bitpay.pages.inc',
   );
 
   return $items;
+}
+
+
+/**
+ * Stand-in function; ensures Bitpay always has access to send notifications
+ */
+function uc_bitpay_notification_access() {
+  return TRUE;
 }
 
 
