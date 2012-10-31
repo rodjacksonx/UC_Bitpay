@@ -83,7 +83,7 @@ function uc_bitpay_settings_form() {
     '#type' => 'textfield',
     '#title' => t('Store website base URL'),
     '#default_value' => variable_get('uc_bitpay_base_url', $base_url),
-    '#description' => t("Base URL of the store website. It is presented here primarily as an option to modify whether 'http' or 'https' is used. If in doubt, please use the store's internal base URL of: ") . '<b>' . $base_url . '</b>',
+    '#description' => t("Base URL of the store website. It is presented here primarily as an option to force the use of the 'https' version of your website if it doesn't automatically use it. Bitpay ") . '<b>' . t('must') . '</b>' . t(" use 'https', so please add the 's' if needed. For reference, the store's internal base URL is normally: ") . '<b>' . $base_url . '</b>',
   );
   $form['admin']['uc_bitpay_debug_mode'] = array(
     '#type' => 'radios',
@@ -151,7 +151,7 @@ function uc_bitpay_settings_form() {
 			'fast' => t('FAST: reasonably safe for small purchases, instant confirmation (please see warning below)')
 		),
     '#default_value' => variable_get('uc_bitpay_txn_speed', 'low'),
-    '#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. ') . '<b>' . t('WARNING: ') . '</b>' . t('Fast and medium-speed transactions allow the slight possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are extremely unlikely, and require enormous amounts of computing power. Fraudulent fast-speed transactions are unlikely, and require some degree of technical effort to achieve. IT IS HIGHLY RECOMMENDED THAT FAST TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
+    '#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. This overrides your merchant settings on the Bitpay website. ') . '<b>' . t('WARNING: ') . '</b>' . t('Fast and medium-speed transactions allow the slight possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are extremely unlikely, and require enormous amounts of computing power. Fraudulent fast-speed transactions are unlikely, and require some degree of technical effort to achieve. IT IS HIGHLY RECOMMENDED THAT FAST TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
 	);
 
   return $form;
@@ -166,7 +166,7 @@ function uc_bitpay_menu() {
 	// when being notified of status changes to an invoice.
   $items[BITPAY_NOTIFY_URL] = array(
     'title' => 'Bitpay Notifications',
-    'access callback' => 'uc_bitpay_notification_access',
+    'access callback' => TRUE, //'uc_bitpay_notification_access',
 		'page callback' => 'uc_bitpay_notification',
     'type' => MENU_CALLBACK,
     'file' => 'uc_bitpay.pages.inc',
@@ -179,9 +179,9 @@ function uc_bitpay_menu() {
 /**
  * Stand-in function; ensures Bitpay always has access to send notifications
  */
-function uc_bitpay_notification_access() {
+/*function uc_bitpay_notification_access() {
   return TRUE;
-}
+}*/
 
 
 /**
@@ -509,7 +509,7 @@ function uc_payment_method_bitpay($op, &$order) {
 				'data' => uc_bitpay_iframe_form($invoice_url)
 			);*/
 			
-			$review = uc_bitpay_iframe_from($invoice_url);
+			$review[] = uc_bitpay_iframe_form($invoice_url);
 
       return $review;
 
