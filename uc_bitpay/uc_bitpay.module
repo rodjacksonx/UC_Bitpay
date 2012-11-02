@@ -64,13 +64,19 @@ function uc_bitpay_settings_form() {
     '#type' => 'textfield',
     '#title' => t('Notification email address'),
     '#default_value' => variable_get('uc_bitpay_notify_email', ''),
-    '#description' => t('Email address to receive Bitpay invoice notifications. Not necessary, primarily for debugging or to be alerted of any bitcoin payments.'),
+    '#description' => t('Email address to receive Bitpay invoice notifications. Primarily for debugging or to be informed of any bitcoin payments.'),
   );
 	$form['admin']['uc_bitpay_notify_email_active'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow Bitpay invoice notifications to be emailed.'),
     '#default_value' => variable_get('uc_bitpay_notify_email_active', FALSE),
 	);
+  $form['admin']['uc_bitpay_alert_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Alert email address'),
+    '#default_value' => variable_get('uc_bitpay_alert_email', ''),
+    '#description' => t('Email address to receive alerts direct from the Bitpay module. The most appropriate recipient would be your website developer.'),
+  );
   $form['admin']['uc_bitpay_full_notify'] = array(
     '#type' => 'radios',
     '#title' => t('Full notification?'),
@@ -150,10 +156,10 @@ function uc_bitpay_settings_form() {
 		'#options' => array(
 		  'low' => t('LOW: fully secure, ~1 hour to confirm'),
 			'medium' => t('MEDIUM: very safe, ~10 minutes to confirm'),
-			'fast' => t('FAST: reasonably safe for small purchases, instant confirmation (please see warning below)')
+			'high' => t('HIGH: reasonably safe for small purchases, instant confirmation (please see warning below)')
 		),
     '#default_value' => variable_get('uc_bitpay_txn_speed', 'low'),
-    '#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. This overrides your merchant settings on the Bitpay website. ') . '<b>' . t('WARNING: ') . '</b>' . t('Fast and medium-speed transactions allow the slight possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are extremely unlikely, and require enormous amounts of computing power. Fraudulent fast-speed transactions are unlikely, and require some degree of technical effort to achieve. IT IS HIGHLY RECOMMENDED THAT FAST TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
+    '#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. This overrides your merchant settings on the Bitpay website. ') . '<b>' . t('WARNING: ') . '</b>' . t('High and medium-speed transactions allow the slight possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are extremely unlikely, and require enormous amounts of computing power. Fraudulent high-speed transactions are unlikely, and require some degree of technical effort to achieve. IT IS STRONGLY RECOMMENDED THAT HIGH-SPEED TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
 	);
 
   return $form;
