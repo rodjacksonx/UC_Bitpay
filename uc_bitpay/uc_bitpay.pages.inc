@@ -110,11 +110,14 @@ function uc_bitpay_notification() {
 	  case 'complete':
 
   		// mark the order as payment received if it hasn't been already
+      if ($order_status != 'bitpay_paid') {
 			$state = uc_order_status_data($order_status, 'state');
       if (($state != 'canceled') && ($state != 'completed')) {
         uc_order_update_status($order_id, 'bitpay_paid');
       }
-
+      // mark the payment
+      uc_payment_enter($order_id, 'bitpay', $notify['price'], $uid, NULL, '', time());
+      }
 		  break;
 		
 	  // EXPIRED: This status reflects that the buyer did not submit
