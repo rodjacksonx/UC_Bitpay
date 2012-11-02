@@ -46,9 +46,15 @@ function uc_bitpay_notification() {
 		return;
   }
 
-  // get the order ID from our database
-	$order_id = db_query("SELECT order_id FROM {uc_payment_bitpay} WHERE invoice_id = '%s'", $notify['id']);
-  $order = uc_order_load($order_id);
+  // get the order ID from our database;
+  // if none found, nothing we can do with it
+	$order_id = db_result(db_query("SELECT order_id FROM {uc_payment_bitpay} WHERE invoice_id = '%s'", $notify['id']));
+	if (($order_id === false) || !is_numeric($order_id) || ($order_id == 0)) {
+	  return;
+	}
+  // pull the order status and user ID from the database
+  $order_status = db_result(db_query("SELECT order_status FROM {uc_orders} WHERE order_id = %d", $order_id));
+  $uid = db_result(db_query("SELECT uid FROM {uc_orders} WHERE order_id = %d", $order_id));
 
   // on certain invoice status changes, do certain things
   switch ($notify['status']) {
@@ -58,7 +64,7 @@ function uc_bitpay_notification() {
 	  // payment address has been sent the full amount requested.
     // This module waits until 'confirmed', 'complete',
 	  // 'expired' or 'invalid' for any DB updates; it does
-	  // nothing if the invoice is merely 'paid'.
+	  // nothing significant if the invoice is merely 'paid'.
 	  case 'paid':
       // just save a comment
       uc_order_comment_save($order_id, 0, t("Customer has sent the bitcoin transaction for payment, but it has not confirmed yet."), 'admin');
@@ -78,11 +84,14 @@ function uc_bitpay_notification() {
 	  case 'confirmed':
 	
 	    // mark the order as payment received
-			$state = uc_order_status_data($order->order_status, 'state');
+			$state = uc_order_status_data($order_status, 'state');
       if (($state != 'canceled') && ($state != 'completed')) {
-        uc_order_update_status($order->order_id, 'bitpay_confirmed');
+        uc_order_update_status($order_id, 'bitpay_paid');
       }
 
+      // mark the payment
+      uc_payment_enter($order_id, 'bitpay', $notify['price'], $uid, NULL, '', time());
+      
 			// note the payment confirmation
       uc_order_comment_save($order_id, 0, t("Customer's bitcoin payment has confirmed according to the transaction speed you have set for Bitpay."), 'admin');
 
@@ -96,14 +105,14 @@ function uc_bitpay_notification() {
 	  // status will go from 'paid' to 'complete', bypassing 'confirmed.'
 	  // This module takes no action upon this status change. Please
 	  // note that this means this module is not capable of either
-	  // discovering or resolving any issues resulting from 'fast'
-	  // invoices encountering a double-spend attack.
+	  // discovering or resolving any issues resulting from 'high'-
+	  // speed invoices encountering a double-spend attack.
 	  case 'complete':
 
   		// mark the order as payment received if it hasn't been already
-			$state = uc_order_status_data($order->order_status, 'state');
+			$state = uc_order_status_data($order_status, 'state');
       if (($state != 'canceled') && ($state != 'completed')) {
-        uc_order_update_status($order->order_id, 'bitpay_confirmed');
+        uc_order_update_status($order->order_id, 'bitpay_paid');
       }
 
 			// note the payment completion
@@ -115,13 +124,11 @@ function uc_bitpay_notification() {
 	  // full payment within the 15-minute window Bitpay allows, and
 	  // thus the invoice is no longer to be used. As of 2012-10-31,
 	  // Bitpay does not actively send a notification when an invoice
-	  // becomes invalid. This code will be left in on the chance that
-	  // they eventually do, but it is being simplified to merely leave
-	  // a comment should it occur.
+	  // becomes expired. This code will be left in on the chance that
+	  // they eventually do.
 	  case 'expired':
 	
-	    // just make a comment
-      uc_order_comment_save($order_id, 0, t("The current Bitpay invoice for this order has expired."), 'admin');
+	    // do nothing
 			
 		  break;
 		
@@ -192,7 +199,7 @@ function uc_bitpay_mail($txt, $priority = 3) {
 
 	$success = false;
 	
-  $to = variable_get('uc_bitpay_notify_email', '');
+  $to = variable_get('uc_bitpay_alert_email', '');
 	
 	if ($to != '') {
 	  // prepare to construct the message array we need
