@@ -270,7 +270,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
   }
 	
   if (($arg1->payment_method == 'bitpay') &&
-      (variable_get('uc_bitpay_debug_mode', 0) &&
+      (!variable_get('uc_bitpay_debug_mode', 0) ||
         user_access('access administration menu'))) {
 	
     switch ($op) {
