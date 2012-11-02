@@ -77,6 +77,11 @@ function uc_bitpay_settings_form() {
     '#default_value' => variable_get('uc_bitpay_alert_email', ''),
     '#description' => t('Email address to receive alerts direct from the Bitpay module. The most appropriate recipient would be your website developer.'),
   );
+	$form['admin']['uc_bitpay_copy_notify_emails'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Send a message to the alert email whenever Bitpay sends an invoice notification.'),
+    '#default_value' => variable_get('uc_bitpay_copy_notify_emails', FALSE),
+	);
   $form['admin']['uc_bitpay_full_notify'] = array(
     '#type' => 'radios',
     '#title' => t('Full notification?'),
