@@ -115,9 +115,6 @@ function uc_bitpay_notification() {
         uc_order_update_status($order_id, 'bitpay_paid');
       }
 
-			// note the payment completion
-      uc_order_comment_save($order_id, 0, t("Customer's bitcoin payment has completed; Bitpay has credited your account for the customer's payment."), 'admin');
-			
 		  break;
 		
 	  // EXPIRED: This status reflects that the buyer did not submit
