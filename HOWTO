@@ -12,7 +12,7 @@ To use this module:
 
 (3) On your Bitpay merchant page, provide deposit information. This can be information for your bank account, or a forwarding bitcoin address, or some mixture thereof (you can set the funds to be converted to different currencies in differing proportions.) You should also create at least one API key.
 
-(4) Place the folder 'uc_bitpay' into the proper location on your server. You will want to first find the 'ubercart' module directory; within that directory, go to the 'payment' subdirectory, where you will find the different payment modules. Copy the 'uc_bitpay' folder to that subdirectory.
+(4) Place the folder 'uc_bitpay' into the proper location on your server; it needs to be placed with your other modules. If in doubt, find the 'ubercart' module folder (likely in the 'modules' directory), and copy the 'uc_bitpay' folder to that same directory (again, likely 'modules'.)
 
 (5) Enable the module. As an administrator on your website, view the 'Modules' section of 'Site Building'. The module will be found under 'Ubercart - payment'. Check 'Bitpay' and save the configuration.
 
