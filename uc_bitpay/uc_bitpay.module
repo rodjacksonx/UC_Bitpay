@@ -400,8 +400,8 @@ function uc_payment_method_bitpay($op, &$order) {
 					else {
 						$notify_email = '';
 					}
-					$txn_speed = variable_get('uc_bitpay_txn_speed', 'low')
-					$physical = (variable_get('uc_bitpay_physical', 1) == 1)
+					$txn_speed = variable_get('uc_bitpay_txn_speed', 'low');
+					$physical = (variable_get('uc_bitpay_physical', 1) == 1);
 					db_query("INSERT INTO {uc_payment_bitpay} (invoice_id, order_id, notify_email, physical, txn_speed) VALUES ('%s', %d, '%s', %d, '%s')", $resp['id'], $order->order_id, $notify_email, $physical, $txn_speed);
 					$success = TRUE;
 				}
