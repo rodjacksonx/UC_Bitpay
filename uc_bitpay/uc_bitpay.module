@@ -10,14 +10,6 @@
  * Mike Gogulski's uc_bitcoin payment module
  */
  
-/**
- * NOTE: Until such time as I can complete the function, the
- * "bitcoin handling fee" feature is commented out. Currently,
- * it fails to include taxes properly if a customer goes to
- * checkout as normal (although it does if the customer backs
- * up from the order review page, then goes to review his order
- * again with no changes.)
- */
 
 require_once("bp_lib.php");
 require_once("uc_bitpay.pages.inc");
@@ -33,6 +25,7 @@ define ('BITCOIN_ACCEPTED_LOGO_PATH', base_path() . drupal_get_path('module', 'u
 define ('BITPAY_NOTIFY_URL', "uc_bitpay/notifications");
 
 define ('BITPAY_INVOICE_EXPIRATION_TIME', "15"); // in minutes; keep as a string
+
 
 /**
  * Settings form for the Bitpay payment method module.
@@ -212,7 +205,9 @@ function uc_bitpay_help($path, $arg) {
 	$o = '';  // declare your output variable
 	switch ($path) {
 		case "admin/help#bitpay":
-			$o .= '<p>'.  t('Implements the acceptance of bitcoin payments through the ') .  "Bitpay.com" . t(' API.') .'</p>';
+			$o .= '<p>'. 
+				t('Implements the acceptance of bitcoin payments through the ') .
+				"Bitpay.com" . t(' API.') .'</p>';
 			break;
 	}
 	return $o;
@@ -225,7 +220,8 @@ function uc_bitpay_help($path, $arg) {
 function uc_bitpay_payment_method() {
 
 	// only show it if we aren't in debug mode, or are an admin
-	if ((!variable_get('uc_bitpay_debug_mode', 0) || user_access('access administration menu'))) {
+	if ((!variable_get('uc_bitpay_debug_mode', 0) ||
+	user_access('access administration menu'))) {
 
 		$title = '<img src="' . BITPAY_WEBSITE . BITPAY_SMALL_LOGO_FILE . '" ' .
 			'style="position:relative; top:5px; margin-right:6px;" />' .
@@ -273,7 +269,9 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 		}
 	}
 	
-	if (($arg1->payment_method == 'bitpay') && (!variable_get('uc_bitpay_debug_mode', 0) || user_access('access administration menu'))) {
+	if (($arg1->payment_method == 'bitpay') &&
+	(!variable_get('uc_bitpay_debug_mode', 0) ||
+	user_access('access administration menu'))) {
 
 		switch ($op) {
 
@@ -342,7 +340,10 @@ function uc_payment_method_bitpay($op, &$order) {
 			$txt = t('When you proceed to review your order, you will be shown a bitcoin address for payment, along with a QR code of the address.') . '<br /><br />' . t('The price will be converted to bitcoins at the current to-the-minute exchange rate, and you will have ') . BITPAY_INVOICE_EXPIRATION_TIME . t(' minutes to send payment before the invoice expires.');
 			$amt = uc_bitpay_get_handling_fee($order);
 			if ($amt > 0) {
-				$txt .= '<br /><br /><b>' . t('Please note that a bitcoin handling fee of ') . uc_price($amt, array('revision' => 'formatted-original')) . t(' will be added to the final cost.') . '</b>';
+				$txt .= '<br /><br /><b>' .
+					t('Please note that a bitcoin handling fee of ') .
+					uc_price($amt, array('revision' => 'formatted-original')) .
+					t(' will be added to the final cost.') . '</b>';
 			}
 			$details = $txt;
 			return $details;
@@ -368,7 +369,9 @@ function uc_payment_method_bitpay($op, &$order) {
 					// or price or currency have changed
 					$text_total = uc_order_get_total($order);
 					$text_total .= '';
-					if (($resp['status'] == 'expired') || ($resp['price'] != $text_total) || ($resp['currency'] != variable_get('uc_bitpay_currency', 'BTC'))) {
+					if (($resp['status'] == 'expired') ||
+					($resp['price'] != $text_total) ||
+					($resp['currency'] != variable_get('uc_bitpay_currency', 'BTC'))) {
 						// we need a new one
 						$need_new_invoice = true;
 					}
@@ -541,15 +544,15 @@ function uc_bitpay_create_invoice($order, $price = false) {
  	}
 
 	// Array the rest of the order data we need to send.
-  	// Start with notificationURL, notificationEmail
+  // Start with notificationURL, notificationEmail
 	// and fullNotifications
 	$options = array();
 	$site_url = variable_get('uc_bitpay_base_url', $base_url);
 	$options['notificationURL'] = $site_url . '/' . BITPAY_NOTIFY_URL;
 	if (variable_get('uc_bitpay_notify_email_active', FALSE)) {
 		$options['notificationEmail'] = variable_get('uc_bitpay_notify_email', '');
-  	}
-         $options['fullNotifications'] = (variable_get('uc_bitpay_full_notify', 0) == 1);
+	}
+  $options['fullNotifications'] = (variable_get('uc_bitpay_full_notify', 0) == 1);
 
   	// orderID and API key
 	$options['orderID'] = $order_id;
@@ -700,7 +703,8 @@ function uc_bitpay_line_item_callback($op, $arg) {
 	// Javascript to detect when that changes to include 'bitcoin',
 	// then display the handling fee line item.
 	
-	if (($arg->payment_method != 'bitpay') || (variable_get('uc_bitpay_debug_mode', 0) && !user_access('access administration menu'))) {
+	if (($arg->payment_method != 'bitpay') ||
+			(variable_get('uc_bitpay_debug_mode', 0) && !user_access('access administration menu'))) {
 		return $lines;
 	}
 
