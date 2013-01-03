@@ -264,7 +264,7 @@ function uc_bitpay_order($op, $arg1, $arg2) {
 		foreach($arg1->line_items as $k => $line_item) {
 			if($line_item['type'] == 'uc_bitpay_fee') {
 				unset($arg1->line_items[$k]);
-				db_query('DELETE FROM {uc_order_line_items} WHERE order_id = %d AND type = "%s"', $arg1->order_id, 'uc_bitpay_fee');
+				db_query("DELETE FROM {uc_order_line_items} WHERE order_id = %d AND type = '%s'", $arg1->order_id, 'uc_bitpay_fee');
 			}
 		}
 	}
@@ -340,10 +340,10 @@ function uc_payment_method_bitpay($op, &$order) {
 			$txt = t('When you proceed to review your order, you will be shown a bitcoin address for payment, along with a QR code of the address.') . '<br /><br />' . t('The price will be converted to bitcoins at the current to-the-minute exchange rate, and you will have ') . BITPAY_INVOICE_EXPIRATION_TIME . t(' minutes to send payment before the invoice expires.');
 			$amt = uc_bitpay_get_handling_fee($order);
 			if ($amt > 0) {
-				$txt .= '<br /><br /><b>' .
+				$txt .= '<br /><br /><strong>' .
 					t('Please note that a bitcoin handling fee of ') .
 					uc_price($amt, array('revision' => 'formatted-original')) .
-					t(' will be added to the final cost.') . '</b>';
+					t(' will be added to the final cost.') . '</strong>';
 			}
 			$details = $txt;
 			return $details;
