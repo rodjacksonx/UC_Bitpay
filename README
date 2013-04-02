@@ -8,10 +8,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
 
    ----------
 
-WARNING: This code is currently BETA. It has been through testing, and is stable and very functional, but may have bugs. Use at your own risk!
+WARNING: This code is currently BETA, although it is practically finished. It has been through testing, and is stable and very functional, but may have a minor glitch or two. Use at your own risk.
 
    ----------
 
 UC_BITPAY is a payment method module intended for use with version 6.x of Drupal, and version 2.x of Ubercart.
 
-This module allows e-commerce merchants who have signed up with Bitpay (at https://bitpay.com) to use their API to accept bitcoins for online payments. The funds are converted by Bitpay to your local currency (in exchange for a fee) and a direct deposit is made into your bank. They allow deposits in US Dollars, Canadian Dollars, Mexican Pesos, Eurozone Euros, and British Pounds. Alternatively, they can simply forward the bitcoins to a bitcoin address of your choosing, for a much lower fee.
+This module allows e-commerce merchants who have signed up with Bitpay (at https://bitpay.com) to use their API to accept bitcoins for online payments. The funds are converted by Bitpay to your local currency (in exchange for a fee) and a direct deposit is made into your bank. They currently allow deposits in: US Dollars, Canadian Dollars, Mexican Pesos, Eurozone Euros, British Pounds, Australian Dollars, New Zealand Dollars, Norwegian Kroner, Swedish Kroner, Danish Kroner, and South African Rand. Alternatively, they can simply forward the bitcoins to a bitcoin address of your choosing, for a much lower fee.
