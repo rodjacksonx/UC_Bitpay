@@ -166,10 +166,10 @@ function uc_bitpay_settings_form() {
 		'#options' => array(
 			'low' => t('LOW: fully secure, ~1 hour to confirm'),
 			'medium' => t('MEDIUM: very safe, ~10 minutes to confirm'),
-			'high' => t('HIGH: reasonably safe for small purchases, instant confirmation (please see warning below)')
+			'high' => t('HIGH: intended for small purchases, instant confirmation (please see warning below)')
 		),
 		'#default_value' => variable_get('uc_bitpay_txn_speed', 'low'),
-		'#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. This overrides your merchant settings on the Bitpay website. ') . '<b>' . t('WARNING: ') . '</b>' . t('High and medium-speed transactions allow the slight possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are extremely unlikely, and require enormous amounts of computing power. Fraudulent high-speed transactions are unlikely, and require some degree of technical effort to achieve. IT IS STRONGLY RECOMMENDED THAT HIGH-SPEED TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
+		'#description' => t('Speed at which the bitcoin transaction registers as "confirmed" to the store. This overrides your merchant settings on the Bitpay website. ') . '<b>' . t('WARNING: ') . '</b>' . t('High and medium-speed transactions allow the possibility of a fraudulent double-spend. Fraudulent medium-speed transactions are highly unlikely, and require some degree of technical effort to achieve; this setting achieves a reasonable balance between confirmation speed and security for moderately-priced purchases. Fraudulent high-speed transactions are unlikely; however, this setting still involves a notable amount of risk. IT IS STRONGLY RECOMMENDED THAT HIGH-SPEED TRANSACTIONS BE AVOIDED WHEN POSSIBLE, AND THAT THEY ONLY INVOLVE SMALL PURCHASE AMOUNTS. ') . '<b>' . t('IF YOU ARE UNSURE OF WHAT SPEED TO USE, PLEASE USE THE "LOW" TRANSACTION SPEED.') . '</b>'
 	);
 
 	return $form;
