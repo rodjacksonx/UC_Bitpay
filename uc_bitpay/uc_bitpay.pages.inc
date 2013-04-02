@@ -48,13 +48,13 @@ function uc_bitpay_notification() {
 
   // get the order ID from our database;
   // if none found, nothing we can do with it
-	$order_id = db_result(db_query("SELECT order_id FROM {uc_payment_bitpay} WHERE invoice_id = '%s'", $notify['id']));
+	$order_id = db_result(db_query("SELECT `order_id` FROM {uc_payment_bitpay} WHERE `invoice_id` = '%s'", $notify['id']));
 	if (($order_id === false) || !is_numeric($order_id) || ($order_id == 0)) {
 	  return;
 	}
   // pull the order status and user ID from the database
-  $order_status = db_result(db_query("SELECT order_status FROM {uc_orders} WHERE order_id = %d", $order_id));
-  $uid = db_result(db_query("SELECT uid FROM {uc_orders} WHERE order_id = %d", $order_id));
+  $order_status = db_result(db_query("SELECT `order_status` FROM {uc_orders} WHERE `order_id` = %d", $order_id));
+  $uid = db_result(db_query("SELECT `uid` FROM {uc_orders} WHERE `order_id` = %d", $order_id));
 
   // on certain invoice status changes, do certain things
   switch ($notify['status']) {
