@@ -740,8 +740,9 @@ function uc_bitpay_line_item_callback($op, $arg) {
  */
 function uc_bitpay_iframe_form($url) {
 
-	$iframe = '<iframe margin-left="auto" margin-right="auto" ' .
-		'style="width:500px; height:150px" src="' . $url . '&view=iframe">' .
+	$iframe = '<iframe style="width:500px; height:150px; overflow:hidden; ' .
+	  'border:none; margin:auto; display:block;" scrolling="no" ' .
+	  'allowtransparency="true"  frameborder="0" src="' . $url . '&view=iframe">' .
 		'Your browser does not support IFRAMEs. Please click ' .
 		'<a href="' . $url . '" target="_blank">HERE</a> ' .
 		'to make payment, then return to this page to complete your order.' .
